@@ -344,13 +344,6 @@ def LongSubstractionModule(a, b, mod):
         result = LongDivideModule(sub, mod)[1]
     return result
 
-
-# def LongMultiplyModule(a, b, mod):
-#     mul = LongMultiply(a, b)
-#     mul_mod = LongDivideModule(mul, mod)[1]
-#     return mul_mod
-
-
 def LongMultiplyModule(a, b, mod):
     µ = evaluateMu(mod)
     mul = LongMultiply(a, b)
@@ -373,7 +366,6 @@ def LongModulePower(a, b, mod):
             pow = BarrettReduction(LongMultiply(pow, a_mod), mod, µ)
         a_mod = BarrettReduction(LongSquare(a_mod), mod, µ)
     return pow
-
 
 
 gcd_result, gcd_time = measure_time(GCD, A, B, index=0)
@@ -404,43 +396,4 @@ mod_pow_result, mod_pow_time = measure_time(LongModulePower, A, B, Module)
 print(f'(A**B)modModule = {convert_to_hex(mod_pow_result)}')
 print(f'Time taken for (A**B)modModule: {mod_pow_time} seconds')
 
-# Time measurement and results calculation
-sum_result, sum_time = measure_time(LongAddition, A, B)
-sub_result, sub_time = measure_time(LongSubstraction, A, B)
-mul_result, mul_time = measure_time(LongMultiply, A, B)
-divide_result, div_time = measure_time(LongDivideModule, A, B)
-square_result, square_time = measure_time(LongSquare, A)
-pow_result, pow_time = measure_time(LongPower, A, B)
-
-# Convert results to hex
-sum_hex = convert_to_hex(sum_result) if sum_result is not None else "Error"
-sub_hex = convert_to_hex(sub_result) if sub_result is not None else "Error"
-mul_hex = convert_to_hex(mul_result) if mul_result is not None else "Error"
-
-div_hex = convert_to_hex(divide_result[0]) if divide_result[0] != [] else '0'
-div_mod_hex = convert_to_hex(divide_result[1])
-
-square_hex = convert_to_hex(square_result) if square_result is not None else "Error"
-pow_hex = convert_to_hex(pow_result) if pow_result is not None else "Error"
-
-# Print results
-print(f'The result of addition: {sum_hex}')
-print(f'Time taken for addition: {sum_time} seconds')
-
-print(f'The result of substraction: {sub_hex}')
-print(f'Time taken for substraction: {sub_time} seconds')
-
-print(f'The result of multiplication: {mul_hex}')
-print(f'Time taken for multiplication: {mul_time} seconds')
-
-print(f'The result of dividing: {div_hex}')
-print(f'Time taken for dividing: {div_time} seconds')
-
-print(f'The result of remainder of dividing: {div_mod_hex}')
-
-print(f'The result of elevation to the square: {square_hex}')
-print(f'Time taken for square: {square_time} seconds')
-
-print(f'The result of elevation: {pow_hex}')
-print(f'Time taken for power: {pow_time} seconds')
 
