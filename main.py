@@ -2,12 +2,24 @@ import math
 import time
 
 
+def measure_time(func, *args, index=None):
+    start_time = time.time()
+    result = func(*args)
+    end_time = time.time()
+    execution_time = end_time - start_time
+    if index is not None:
+        result = result[index]
+    return result, execution_time
+
+
 def parcer(obj, n):
     args = [iter(obj)] * n
     return zip(*args)
 
 
 def convert_to_hex(num):
+    if num is None:
+        return '0'
     if num == [0]:
         return '0'
     i = len(num) - 1
@@ -47,13 +59,13 @@ def convert_from_hex(hex_num):
     return decs
 
 
-num_1_A = str(input('Enter the first number: '))
-num_2_B = str(input('Enter the second number: '))
-num_Module = str(input('Enter the module: '))
-Module = convert_from_hex(num_Module)
+num_1_A = str(input('Перше значення: '))
+num_2_B = str(input('Друге значення: '))
+num_Module = str(input('Модуль: '))
+
 A = convert_from_hex(num_1_A)
 B = convert_from_hex(num_2_B)
-
+Module = convert_from_hex(num_Module)
 
 def LongAddition(a, b):
     max_len = max(len(a), len(b))
@@ -70,7 +82,12 @@ def LongAddition(a, b):
     return sum
 
 
-def LongSubstraction(a, b):
+def LongSubstration(a, b):
+    '''if LongCompare(a, b) == -1:
+        result = LongSubstration(b, a)
+        result.insert(0, 1)
+        return result
+'''
     borrow = 0
     sub = []
     max_len = max(len(a), len(b))
@@ -87,14 +104,16 @@ def LongSubstraction(a, b):
     if borrow != 0:
         return None
     else:
+        while len(sub) > 1 and sub[-1] == 0:
+            sub.pop()
         return sub
+
 
 
 def LongMultiply(a, b):
     if LongCompare(a, b) == -1:
         return LongMultiply(b, a)
 
-    max_len = max(len(a), len(b))
     mul = [0] * (len(a) + len(b))
 
     for i in range(len(b)):
@@ -114,26 +133,27 @@ def LongMultiply(a, b):
 
 
 def LongDivideModule(a, b):
+    if a == b:
+        return ([1], [0])
     k = BitLength(b)
-    remainder = a
-    div = []
+    remainder = a.copy()
+    quotient = [0]
     while LongCompare(remainder, b) != -1:
         t = BitLength(remainder)
         c = LongShiftBitsToHigh(b, t - k)
-        if LongCompare(remainder, c) == -1:
+        if LongCompare(remainder, c) < 0:
             t -= 1
-            while b[0] == 0:
-                b = b[1:]
-            c = LongShiftBitsToHigh(b, t - k)
-        remainder = LongSubstraction(remainder, c)
-        div = LongAddition(div, LongShiftBitsToHigh([1], t - k))
-        while b[0] == 0:
-            b = b[1:]
-    return [div, remainder]
+            length = t - k
+            c = LongShiftBitsToHigh(b, length)
+        remainder = LongSubstration(remainder, c)
+        temp = LongShiftBitsToHigh([1], t - k)
+        quotient = LongAddition(quotient, temp)
+    return (quotient, remainder)
 
 
 def LongSquare(a):
-    return LongMultiply(a, a)
+    result = LongMultiply(a, a)
+    return result
 
 
 def LongPower(a, b):
@@ -146,54 +166,34 @@ def LongPower(a, b):
             a.append(0)
     return pow
 
-
 def LongCompare(a, b):
     if a != [0]:
-        while a[len(a) - 1] == 0:
-            del a[len(a) - 1]
+        while len(a) > 0 and a[-1] == 0:
+            del a[-1]
     if b != [0]:
-        while b[len(b) - 1] == 0:
-            del b[len(b) - 1]
+        while len(b) > 0 and b[-1] == 0:
+            del b[-1]
     if len(a) == len(b):
         i = max(len(a), len(b)) - 1
-        while a[i] == b[i]:
+        while i >= 0 and a[i] == b[i]:
             i -= 1
-            if i == -1:
-                return 0
+        if i == -1:
+            return 0
+        elif a[i] > b[i]:
+            return 1
         else:
-            if a[i] > b[i]:
-                return 1
-            else:
-                return -1
+            return -1
     elif len(a) > len(b):
         return 1
     else:
         return -1
 
 
+
 def LongShiftDigitsToHigh(n, l):
     for i in range(l):
         n.insert(0, 0)
     return n
-
-
-def LongShiftBitsToLow(n, amount):
-    if amount // 32 >= len(n):
-        return convert_from_hex('0')
-    if amount % 32 == 0:
-        return LongShiftDigitsToLow(n, amount // 32)
-    b = 32 - amount % 32
-    k = 0 if n[len(n) - 1] >> 32 - b != 0 else 1
-    result = [0] * (len(n) - k - amount // 32)
-    if k == 0:
-        result[len(n) - 1] = n[len(n) - 1] >> 32 - b
-        i = len(result) - 2
-    else:
-        i = len(result) - 1
-    for j in reversed(range(amount // 32 + 1, len(n))):
-        result[i] = (n[j] << b) & (2 ** 32 - 1) | n[j - 1] >> 32 - b
-        i -= 1
-    return result
 
 
 def LongShiftDigitsToLow(n, amount):
@@ -206,21 +206,41 @@ def LongShiftDigitsToLow(n, amount):
     return n
 
 
-def LongShiftBitsToHigh(n, amount):
-    if amount % 32 == 0:
-        return LongShiftDigitsToHigh(n, amount // 32)
-    b = 32 - amount % 32
-    k = 1 if n[len(n) - 1] >> b != 0 else 0
-    result = [0] * (len(n) + k + amount // 32)
-    if k == 1:
-        result[len(n) - 1] = n[len(n) - 1] >> b
-        i = len(result) - 2
-    else:
-        i = len(result) - 1
-    for j in reversed(range(1, len(n))):
-        result[i] = (n[j] << 32 - b) & (2 ** 32 - 1) | n[j - 1] >> b
-        i -= 1
-    result[i] = (n[0] << 32 - b) & (2 ** 32 - 1)
+def LongShiftBitsToHigh(number, width_shift):
+    if width_shift <= 0 or number == [0]:
+        return number.copy()
+    remainder = width_shift % 32
+    width_shift //= 32
+    result = LongShiftDigitsToHigh(number.copy(), width_shift)
+    if remainder > 0:
+        for i in range(remainder):
+            last_bit = (result[-1] >> 31) & 1
+            for j in range(len(result) - 1, 0, -1):
+                result[j] = ((result[j] << 1) ^ ((result[j - 1] >> 31) & 1)) & 0xFFFFFFFF
+            result[0] = (result[0] << 1) & 0xFFFFFFFF
+            if last_bit != 0:
+                result.append(last_bit)
+    while len(result) > 1 and result[-1] == 0:
+        result.pop()
+    return result
+
+
+def LongShiftBitsToLow(number, width_shift):
+    if width_shift <= 0 or number == [0]:
+        return number
+    remainder = width_shift % 32
+    width_shift //= 32
+    result = number.copy()
+    for i in range(width_shift):
+        result.pop(0)
+    if remainder > 0:
+        for i in range(remainder):
+            last_bit = (result[0] & 1) << 31
+            for j in range(len(result) - 1):
+                result[j] = ((result[j] >> 1) ^ (result[j + 1] & 1) << 31) & 0xFFFFFFFF
+            result[-1] = ((result[-1] >> 1) | last_bit) & 0xFFFFFFFF
+    while len(result) > 1 and result[-1] == 0:
+        result.pop()
     return result
 
 
@@ -231,19 +251,12 @@ def BitCheck(a, i):
 
 
 def BitLength(a):
-    return (len(a) - 1) * 32 + a[len(a) - 1].bit_length()
+    result = (len(a) - 1) * 32 + a[len(a) - 1].bit_length()
+    return result
 
 
-def measure_time(func, *args, index=None):
-    start_time = time.time()
-    result = func(*args)
-    end_time = time.time()
-    execution_time = end_time - start_time
-    if index is not None:
-        result = result[index]
-    return result, execution_time
+#LAB2!!!
 
-#LAB 2!!!!!!
 
 def GCD(a, b):
     divisor = [1]
@@ -263,11 +276,11 @@ def GCD(a, b):
         compare += 1
         if compare_of_number == 1:
             min_ab = b
-            sub = LongSubstraction(a, b)
+            sub = LongSubstration(a, b)
             col_vo_sub += 1
         elif compare_of_number == -1:
             min_ab = a
-            sub = LongSubstraction(b, a)
+            sub = LongSubstration(b, a)
             col_vo_sub += 1
         else:
             min_ab = b
@@ -276,9 +289,6 @@ def GCD(a, b):
         b = sub
     divisor = LongMultiply(divisor, a)
     return divisor, compare, col_vo_sub
-
-# print('НСД(A, B) = ' + convert_to_hex(GCD(A, B)[0]) + '; кількість порівнянь = ' + str(GCD(A, B)[1]) + '; кількість віднімань = ' + str(GCD(A, B)[2]))
-
 
 def EvklidGCD(a, b):
     compare = 0
@@ -296,11 +306,6 @@ def EvklidGCD(a, b):
             b = [0]
     res = LongAddition(a, b)
     return res, compare, div
-
-
-# EvklidGCD(A, B)
-# print('НСД(A, B) за алгоритмом Евкліда = ' + convert_to_hex(EvklidGCD(A, B)[0]) + '; кількість порівнянь = ' + str(EvklidGCD(A, B)[1]) + '; кількість ділень = ' + str(EvklidGCD(A, B)[2]))
-
 
 
 def LCM(a, b):
@@ -322,9 +327,9 @@ def BarrettReduction(value, module, mu):
     q = LongShiftBitsToLow(value.copy(), (k - 1) * 32)
     q = LongMultiply(q, mu)
     q = LongShiftBitsToLow(q, (k + 1) * 32)
-    reduction = LongSubstraction(value.copy(), LongMultiply(q, module))
+    reduction = LongSubstration(value.copy(), LongMultiply(q, module))
     while LongCompare(reduction, module) >= 0:
-        reduction = LongSubstraction(reduction, module)
+        reduction = LongSubstration(reduction, module)
     return reduction
 
 
@@ -338,11 +343,12 @@ def LongSubstractionModule(a, b, mod):
     if LongCompare(a, b) == -1:
         while LongCompare(a, b) == -1:
             a = LongAddition(a, mod)
-        result = LongSubstraction(a, b)
+        result = LongSubstration(a, b)
     else:
-        sub = LongSubstraction(a, b)
+        sub = LongSubstration(a, b)
         result = LongDivideModule(sub, mod)[1]
     return result
+
 
 def LongMultiplyModule(a, b, mod):
     µ = evaluateMu(mod)
@@ -395,5 +401,3 @@ print(f'Time taken for (A**2)modModule: {mod_sq_time} seconds')
 mod_pow_result, mod_pow_time = measure_time(LongModulePower, A, B, Module)
 print(f'(A**B)modModule = {convert_to_hex(mod_pow_result)}')
 print(f'Time taken for (A**B)modModule: {mod_pow_time} seconds')
-
-
